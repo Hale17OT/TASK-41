@@ -8,17 +8,6 @@ echo "=========================================="
 echo " DispatchOps Test Suite (Docker-based)"
 echo "=========================================="
 
-# ---------------------------------------------------------
-# Generate secrets at runtime — no .env file needed
-# ---------------------------------------------------------
-export DB_ROOT_PASSWORD="test_root_$(date +%s)"
-export DB_USER="dispatchops_app"
-export DB_PASSWORD="test_db_$(date +%s)"
-export AES_SECRET_KEY=$(head -c 32 /dev/urandom | xxd -p -c 64 | head -c 64)
-export HMAC_SECRET_KEY=$(head -c 32 /dev/urandom | xxd -p -c 64 | head -c 64)
-
-echo "  Runtime secrets generated (ephemeral, not saved to disk)"
-
 MAVEN_IMAGE="maven:3.9-eclipse-temurin-17"
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -45,11 +34,11 @@ echo "Unit + Integration tests PASSED"
 
 # ---------------------------------------------------------
 # Step 2: E2E tests against live Docker stack
+# docker-compose.yml has built-in defaults for all secrets
 # ---------------------------------------------------------
 echo ""
 echo "[2/2] Running E2E Tests against Docker stack..."
 
-# docker compose inherits the exported env vars above
 echo "  Starting application stack..."
 docker compose up -d --build --wait
 

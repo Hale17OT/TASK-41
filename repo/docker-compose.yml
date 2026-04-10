@@ -2,10 +2,10 @@ services:
   db:
     image: mysql:8.4
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-dispatchops_root_pw}
       MYSQL_DATABASE: dispatchops
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USER:-dispatchops_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-dispatchops_db_pw}
     ports:
       - "3306:3306"
     volumes:
@@ -25,10 +25,10 @@ services:
       - "8080:8080"
     environment:
       JDBC_URL: jdbc:mysql://db:3306/dispatchops?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      AES_SECRET_KEY: ${AES_SECRET_KEY}
-      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY}
+      DB_USER: ${DB_USER:-dispatchops_app}
+      DB_PASSWORD: ${DB_PASSWORD:-dispatchops_db_pw}
+      AES_SECRET_KEY: ${AES_SECRET_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:-fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210}
       UPLOAD_DIR: /app/uploads
     depends_on:
       db:
