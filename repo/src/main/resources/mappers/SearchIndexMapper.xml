@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.SearchIndexMapper">
+
+    <resultMap id="SearchIndexResultMap" type="SearchIndex">
+        <id property="id" column="id"/>
+        <result property="entityType" column="entity_type"/>
+        <result property="entityId" column="entity_id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="tags" column="tags"/>
+        <result property="authorId" column="author_id"/>
+        <result property="lastIndexedAt" column="last_indexed_at"/>
+    </resultMap>
+
+    <select id="findByEntity" resultMap="SearchIndexResultMap">
+        SELECT * FROM search_index
+        WHERE entity_type = #{entityType}
+          AND entity_id = #{entityId}
+    </select>
+
+    <select id="search" resultMap="SearchIndexResultMap">
+        SELECT *
+        FROM search_index
+        <where>
+            MATCH(title, description, tags) AGAINST(#{query} IN BOOLEAN MODE)
+            <if test="entityType != null and entityType != ''">
+                AND FIND_IN_SET(entity_type, #{entityType}) > 0
+            </if>
+            <if test="authorId != null">
+                AND author_id = #{authorId}
+            </if>
+            <if test="dateFrom != null and dateFrom != ''">
+                AND last_indexed_at &gt;= #{dateFrom}
+            </if>
+            <if test="dateTo != null and dateTo != ''">
+                AND last_indexed_at &lt;= #{dateTo}
+            </if>
+            <if test="status != null and status != ''">
+                AND tags LIKE CONCAT('%', #{status}, '%')
+            </if>
+        </where>
+        <choose>
+            <when test="sort == 'date'">ORDER BY last_indexed_at DESC</when>
+            <when test="sort == 'title'">ORDER BY title ASC</when>
+            <otherwise>ORDER BY MATCH(title, description, tags) AGAINST(#{query} IN BOOLEAN MODE) DESC</otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countSearch" resultType="int">
+        SELECT COUNT(*)
+        FROM search_index
+        <where>
+            MATCH(title, description, tags) AGAINST(#{query} IN BOOLEAN MODE)
+            <if test="entityType != null and entityType != ''">
+                AND FIND_IN_SET(entity_type, #{entityType}) > 0
+            </if>
+            <if test="authorId != null">
+                AND author_id = #{authorId}
+            </if>
+            <if test="dateFrom != null and dateFrom != ''">
+                AND last_indexed_at &gt;= #{dateFrom}
+            </if>
+            <if test="dateTo != null and dateTo != ''">
+                AND last_indexed_at &lt;= #{dateTo}
+            </if>
+            <if test="status != null and status != ''">
+                AND tags LIKE CONCAT('%', #{status}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!-- Courier-scoped search: JOB results filtered by delivery_jobs.courier_id, PROFILE by author_id -->
+    <select id="searchCourierScoped" resultMap="SearchIndexResultMap">
+        SELECT si.*
+        FROM search_index si
+        LEFT JOIN delivery_jobs dj ON si.entity_type = 'JOB' AND si.entity_id = dj.id
+        <where>
+            MATCH(si.title, si.description, si.tags) AGAINST(#{query} IN BOOLEAN MODE)
+            AND FIND_IN_SET(si.entity_type, 'JOB,PROFILE') &gt; 0
+            AND (
+                (si.entity_type = 'JOB' AND dj.courier_id = #{courierId})
+                OR (si.entity_type = 'PROFILE' AND si.author_id = #{courierId})
+            )
+            <if test="dateFrom != null and dateFrom != ''">
+                AND si.last_indexed_at &gt;= #{dateFrom}
+            </if>
+            <if test="dateTo != null and dateTo != ''">
+                AND si.last_indexed_at &lt;= #{dateTo}
+            </if>
+            <if test="status != null and status != ''">
+                AND si.tags LIKE CONCAT('%', #{status}, '%')
+            </if>
+        </where>
+        <choose>
+            <when test="sort == 'date'">ORDER BY si.last_indexed_at DESC</when>
+            <when test="sort == 'title'">ORDER BY si.title ASC</when>
+            <otherwise>ORDER BY MATCH(si.title, si.description, si.tags) AGAINST(#{query} IN BOOLEAN MODE) DESC</otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countSearchCourierScoped" resultType="int">
+        SELECT COUNT(*)
+        FROM search_index si
+        LEFT JOIN delivery_jobs dj ON si.entity_type = 'JOB' AND si.entity_id = dj.id
+        <where>
+            MATCH(si.title, si.description, si.tags) AGAINST(#{query} IN BOOLEAN MODE)
+            AND FIND_IN_SET(si.entity_type, 'JOB,PROFILE') &gt; 0
+            AND (
+                (si.entity_type = 'JOB' AND dj.courier_id = #{courierId})
+                OR (si.entity_type = 'PROFILE' AND si.author_id = #{courierId})
+            )
+            <if test="dateFrom != null and dateFrom != ''">
+                AND si.last_indexed_at &gt;= #{dateFrom}
+            </if>
+            <if test="dateTo != null and dateTo != ''">
+                AND si.last_indexed_at &lt;= #{dateTo}
+            </if>
+            <if test="status != null and status != ''">
+                AND si.tags LIKE CONCAT('%', #{status}, '%')
+            </if>
+        </where>
+    </select>
+
+    <insert id="upsert" parameterType="SearchIndex">
+        INSERT INTO search_index (entity_type, entity_id, title, description, tags, author_id, last_indexed_at)
+        VALUES (#{entityType}, #{entityId}, #{title}, #{description}, #{tags}, #{authorId}, NOW())
+        ON DUPLICATE KEY UPDATE
+            title           = VALUES(title),
+            description     = VALUES(description),
+            tags            = VALUES(tags),
+            author_id       = VALUES(author_id),
+            last_indexed_at = NOW()
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM search_index
+        WHERE entity_type = #{entityType}
+          AND entity_id = #{entityId}
+    </delete>
+
+</mapper>

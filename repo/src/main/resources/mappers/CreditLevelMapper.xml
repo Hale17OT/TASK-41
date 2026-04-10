@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.CreditLevelMapper">
+
+    <resultMap id="CreditLevelSnapshotResultMap" type="CreditLevelSnapshot">
+        <id property="id" column="id"/>
+        <result property="courierId" column="courier_id"/>
+        <result property="level" column="level"/>
+        <result property="maxConcurrent" column="max_concurrent"/>
+        <result property="avgRating30d" column="avg_rating_30d"/>
+        <result property="violationsActive" column="violations_active"/>
+        <result property="calculatedAt" column="calculated_at"/>
+    </resultMap>
+
+    <select id="findByCourierId" resultMap="CreditLevelSnapshotResultMap">
+        SELECT * FROM credit_levels WHERE courier_id = #{courierId}
+    </select>
+
+    <insert id="upsert" parameterType="CreditLevelSnapshot">
+        INSERT INTO credit_levels (courier_id, level, max_concurrent, avg_rating_30d, violations_active, calculated_at)
+        VALUES (#{courierId}, #{level}, #{maxConcurrent}, #{avgRating30d}, #{violationsActive}, #{calculatedAt})
+        ON DUPLICATE KEY UPDATE
+            level             = VALUES(level),
+            max_concurrent    = VALUES(max_concurrent),
+            avg_rating_30d    = VALUES(avg_rating_30d),
+            violations_active = VALUES(violations_active),
+            calculated_at     = VALUES(calculated_at)
+    </insert>
+
+</mapper>

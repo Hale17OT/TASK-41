@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.ProfileChangeLogMapper">
+
+    <resultMap id="ProfileChangeLogResultMap" type="ProfileChangeLog">
+        <id property="id" column="id"/>
+        <result property="profileId" column="profile_id"/>
+        <result property="fieldName" column="field_name"/>
+        <result property="oldValueMasked" column="old_value_masked"/>
+        <result property="newValueMasked" column="new_value_masked"/>
+        <result property="changedBy" column="changed_by"/>
+        <result property="changedAt" column="changed_at"/>
+    </resultMap>
+
+    <select id="findByProfileId" resultMap="ProfileChangeLogResultMap">
+        SELECT * FROM profile_change_log
+        WHERE profile_id = #{profileId}
+        ORDER BY changed_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <insert id="insert" parameterType="ProfileChangeLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO profile_change_log (profile_id, field_name, old_value_masked, new_value_masked, changed_by)
+        VALUES (#{profileId}, #{fieldName}, #{oldValueMasked}, #{newValueMasked}, #{changedBy})
+    </insert>
+
+</mapper>

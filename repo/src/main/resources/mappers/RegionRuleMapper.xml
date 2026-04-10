@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.RegionRuleMapper">
+
+    <resultMap id="RegionRuleResultMap" type="RegionRule">
+        <id property="id" column="id"/>
+        <result property="templateId" column="template_id"/>
+        <result property="stateCode" column="state_code"/>
+        <result property="zipRangeStart" column="zip_range_start"/>
+        <result property="zipRangeEnd" column="zip_range_end"/>
+        <result property="minWeightLbs" column="min_weight_lbs"/>
+        <result property="maxWeightLbs" column="max_weight_lbs"/>
+        <result property="minOrderAmount" column="min_order_amount"/>
+        <result property="maxOrderAmount" column="max_order_amount"/>
+        <result property="allowed" column="is_allowed"/>
+        <result property="priority" column="priority"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="RegionRuleResultMap">
+        SELECT * FROM region_rules WHERE id = #{id}
+    </select>
+
+    <select id="findByTemplateId" resultMap="RegionRuleResultMap">
+        SELECT * FROM region_rules WHERE template_id = #{templateId} ORDER BY priority DESC
+    </select>
+
+    <select id="findMatchingRules" resultMap="RegionRuleResultMap">
+        SELECT * FROM region_rules
+        <where>
+            <if test="state != null and state != ''">
+                AND (state_code IS NULL OR state_code = #{state})
+            </if>
+            <if test="zip != null and zip != ''">
+                AND (zip_range_start IS NULL OR zip_range_start &lt;= #{zip})
+                AND (zip_range_end IS NULL OR zip_range_end &gt;= #{zip})
+            </if>
+            <if test="weight != null">
+                AND (min_weight_lbs IS NULL OR min_weight_lbs &lt;= #{weight})
+                AND (max_weight_lbs IS NULL OR max_weight_lbs &gt;= #{weight})
+            </if>
+            <if test="amount != null">
+                AND (min_order_amount IS NULL OR min_order_amount &lt;= #{amount})
+                AND (max_order_amount IS NULL OR max_order_amount &gt;= #{amount})
+            </if>
+        </where>
+        ORDER BY priority DESC
+    </select>
+
+    <insert id="insert" parameterType="RegionRule" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO region_rules (template_id, state_code, zip_range_start, zip_range_end,
+                                  min_weight_lbs, max_weight_lbs, min_order_amount, max_order_amount,
+                                  is_allowed, priority)
+        VALUES (#{templateId}, #{stateCode}, #{zipRangeStart}, #{zipRangeEnd},
+                #{minWeightLbs}, #{maxWeightLbs}, #{minOrderAmount}, #{maxOrderAmount},
+                #{allowed}, #{priority})
+    </insert>
+
+    <update id="update" parameterType="RegionRule">
+        UPDATE region_rules
+        SET template_id      = #{templateId},
+            state_code       = #{stateCode},
+            zip_range_start  = #{zipRangeStart},
+            zip_range_end    = #{zipRangeEnd},
+            min_weight_lbs   = #{minWeightLbs},
+            max_weight_lbs   = #{maxWeightLbs},
+            min_order_amount = #{minOrderAmount},
+            max_order_amount = #{maxOrderAmount},
+            is_allowed       = #{allowed},
+            priority         = #{priority}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM region_rules WHERE id = #{id}
+    </delete>
+
+</mapper>

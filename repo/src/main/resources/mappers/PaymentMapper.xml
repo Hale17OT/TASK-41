@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.PaymentMapper">
+
+    <resultMap id="PaymentResultMap" type="Payment">
+        <id property="id" column="id"/>
+        <result property="idempotencyKey" column="idempotency_key"/>
+        <result property="jobId" column="job_id"/>
+        <result property="payerId" column="payer_id"/>
+        <result property="amount" column="amount"/>
+        <result property="method" column="method"/>
+        <result property="status" column="status"/>
+        <result property="checkNumber" column="check_number"/>
+        <result property="settledBy" column="settled_by"/>
+        <result property="settledAt" column="settled_at"/>
+        <result property="refundEligibleUntil" column="refund_eligible_until"/>
+        <result property="deviceId" column="device_id"/>
+        <result property="deviceSeqId" column="device_seq_id"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="PaymentResultMap">
+        SELECT * FROM payments WHERE id = #{id}
+    </select>
+
+    <select id="findByIdempotencyKey" resultMap="PaymentResultMap">
+        SELECT * FROM payments WHERE idempotency_key = #{key}
+    </select>
+
+    <select id="findByJobId" resultMap="PaymentResultMap">
+        SELECT * FROM payments WHERE job_id = #{jobId} ORDER BY created_at DESC
+    </select>
+
+    <select id="findByStatus" resultMap="PaymentResultMap">
+        SELECT * FROM payments
+        <where>
+            <if test="status != null and status != ''">
+                status = #{status}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByStatus" resultType="int">
+        SELECT COUNT(*) FROM payments
+        <where>
+            <if test="status != null and status != ''">
+                status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <select id="findFiltered" resultMap="PaymentResultMap">
+        SELECT * FROM payments
+        <where>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="from != null and from != ''">
+                AND created_at &gt;= #{from}
+            </if>
+            <if test="to != null and to != ''">
+                AND created_at &lt;= #{to}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countFiltered" resultType="int">
+        SELECT COUNT(*) FROM payments
+        <where>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="from != null and from != ''">
+                AND created_at &gt;= #{from}
+            </if>
+            <if test="to != null and to != ''">
+                AND created_at &lt;= #{to}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insert" parameterType="Payment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO payments (idempotency_key, job_id, payer_id, amount, method, status,
+                              check_number, device_id, device_seq_id)
+        VALUES (#{idempotencyKey}, #{jobId}, #{payerId}, #{amount}, #{method}, #{status},
+                #{checkNumber}, #{deviceId}, #{deviceSeqId})
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE payments
+        SET status     = #{newStatus},
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND status = #{expectedStatus}
+    </update>
+
+    <update id="settle">
+        UPDATE payments
+        SET status                = 'SETTLED',
+            settled_by            = #{settledBy},
+            settled_at            = #{settledAt},
+            refund_eligible_until = #{refundEligibleUntil},
+            updated_at            = NOW()
+        WHERE id = #{id}
+          AND status = 'PENDING_SETTLEMENT'
+    </update>
+
+</mapper>

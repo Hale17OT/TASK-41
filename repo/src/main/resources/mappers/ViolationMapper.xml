@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.ViolationMapper">
+
+    <resultMap id="ViolationResultMap" type="Violation">
+        <id property="id" column="id"/>
+        <result property="courierId" column="courier_id"/>
+        <result property="jobId" column="job_id"/>
+        <result property="violationType" column="violation_type"/>
+        <result property="description" column="description"/>
+        <result property="penaltyStart" column="penalty_start"/>
+        <result property="penaltyEnd" column="penalty_end"/>
+        <result property="issuedBy" column="issued_by"/>
+        <result property="active" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="ViolationResultMap">
+        SELECT * FROM violations WHERE id = #{id}
+    </select>
+
+    <select id="findByCourierId" resultMap="ViolationResultMap">
+        SELECT * FROM violations WHERE courier_id = #{courierId} ORDER BY created_at DESC
+    </select>
+
+    <select id="countActiveByCourierId" resultType="int">
+        SELECT COUNT(*) FROM violations
+        WHERE courier_id = #{courierId}
+          AND is_active = 1
+          AND penalty_end &gt; NOW()
+    </select>
+
+    <insert id="insert" parameterType="Violation">
+        INSERT INTO violations (courier_id, job_id, violation_type, description,
+                                penalty_start, penalty_end, issued_by)
+        VALUES (#{courierId}, #{jobId}, #{violationType}, #{description},
+                #{penaltyStart}, #{penaltyEnd}, #{issuedBy})
+    </insert>
+
+    <update id="deactivate">
+        UPDATE violations
+        SET is_active = 0
+        WHERE id = #{id}
+    </update>
+
+</mapper>

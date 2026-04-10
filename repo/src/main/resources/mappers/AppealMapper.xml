@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.AppealMapper">
+
+    <resultMap id="AppealResultMap" type="Appeal">
+        <id property="id" column="id"/>
+        <result property="ratingId" column="rating_id"/>
+        <result property="violationId" column="violation_id"/>
+        <result property="courierId" column="courier_id"/>
+        <result property="reason" column="reason"/>
+        <result property="status" column="status"/>
+        <result property="reviewerId" column="reviewer_id"/>
+        <result property="reviewerComment" column="reviewer_comment"/>
+        <result property="resolvedAt" column="resolved_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="AppealResultMap">
+        SELECT * FROM appeals WHERE id = #{id}
+    </select>
+
+    <select id="findByStatus" resultMap="AppealResultMap">
+        SELECT * FROM appeals
+        WHERE status = #{status}
+        ORDER BY created_at ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findByCourierId" resultMap="AppealResultMap">
+        SELECT * FROM appeals WHERE courier_id = #{courierId} ORDER BY created_at DESC
+    </select>
+
+    <insert id="insert" parameterType="Appeal">
+        INSERT INTO appeals (rating_id, violation_id, courier_id, reason, status)
+        VALUES (#{ratingId}, #{violationId}, #{courierId}, #{reason}, #{status})
+    </insert>
+
+    <update id="resolve">
+        UPDATE appeals
+        SET status           = #{status},
+            reviewer_id      = #{reviewerId},
+            reviewer_comment = #{reviewerComment},
+            resolved_at      = #{resolvedAt}
+        WHERE id = #{id}
+          AND status = 'PENDING'
+    </update>
+
+    <select id="countByCourierId" resultType="int">SELECT COUNT(*) FROM appeals WHERE courier_id = #{courierId}</select>
+    <select id="countByStatus" resultType="int">SELECT COUNT(*) FROM appeals WHERE status = #{status}</select>
+</mapper>

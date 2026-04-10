@@ -1,0 +1,131 @@
+/* =====================================================
+   DispatchOps -- Fluent UI Design Token System
+   CSS-only adaptation of Microsoft Fluent UI v9
+   ===================================================== */
+
+:root {
+  /* === Color Tokens === */
+  --fluent-color-brand-primary: #0078D4;
+  --fluent-color-brand-primary-hover: #106EBE;
+  --fluent-color-brand-primary-active: #005A9E;
+  --fluent-color-brand-primary-disabled: #BDBDBD;
+  --fluent-color-brand-foreground: #FFFFFF;
+
+  --fluent-color-neutral-bg-canvas: #F5F5F5;
+  --fluent-color-neutral-bg-surface: #FFFFFF;
+  --fluent-color-neutral-bg-subtle: #FAFAFA;
+  --fluent-color-neutral-bg-sidebar: #F0F0F0;
+  --fluent-color-neutral-bg-header: #FFFFFF;
+  --fluent-color-neutral-bg-input: #FFFFFF;
+
+  --fluent-color-neutral-fg-1: #242424;
+  --fluent-color-neutral-fg-2: #616161;
+  --fluent-color-neutral-fg-3: #9E9E9E;
+  --fluent-color-neutral-fg-disabled: #BDBDBD;
+  --fluent-color-neutral-fg-on-brand: #FFFFFF;
+
+  --fluent-color-neutral-stroke-1: #D1D1D1;
+  --fluent-color-neutral-stroke-2: #E0E0E0;
+  --fluent-color-neutral-stroke-focus: #000000;
+  --fluent-color-neutral-stroke-accessible: #616161;
+
+  /* Status colors */
+  --fluent-color-status-success: #107C10;
+  --fluent-color-status-success-bg: #DFF6DD;
+  --fluent-color-status-warning: #FFB900;
+  --fluent-color-status-warning-bg: #FFF4CE;
+  --fluent-color-status-danger: #D13438;
+  --fluent-color-status-danger-bg: #FDE7E9;
+  --fluent-color-status-info: #0078D4;
+  --fluent-color-status-info-bg: #DEECF9;
+
+  /* Idle warning colors */
+  --fluent-color-idle-yellow: #FFB900;
+  --fluent-color-idle-yellow-bg: #FFF4CE;
+  --fluent-color-idle-orange: #FF8C00;
+  --fluent-color-idle-orange-bg: #FFF1E0;
+  --fluent-color-idle-red: #D13438;
+  --fluent-color-idle-red-bg: #FDE7E9;
+
+  /* Credit level colors */
+  --fluent-color-credit-a: #107C10;
+  --fluent-color-credit-b: #0078D4;
+  --fluent-color-credit-c: #FFB900;
+  --fluent-color-credit-d: #D13438;
+
+  /* Job status colors */
+  --fluent-color-job-created: #0078D4;
+  --fluent-color-job-picked: #8764B8;
+  --fluent-color-job-in-transit: #FFB900;
+  --fluent-color-job-delivered: #107C10;
+  --fluent-color-job-exception: #D13438;
+  --fluent-color-job-manual: #FF8C00;
+
+  /* === Spacing Tokens (8px grid) === */
+  --fluent-spacing-xxs: 2px;
+  --fluent-spacing-xs: 4px;
+  --fluent-spacing-s: 8px;
+  --fluent-spacing-m: 16px;
+  --fluent-spacing-l: 24px;
+  --fluent-spacing-xl: 32px;
+  --fluent-spacing-xxl: 48px;
+  --fluent-spacing-xxxl: 64px;
+
+  /* === Typography === */
+  --fluent-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif;
+  --fluent-font-family-mono: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+
+  --fluent-font-size-hero: 28px;
+  --fluent-font-size-h1: 24px;
+  --fluent-font-size-h2: 20px;
+  --fluent-font-size-h3: 16px;
+  --fluent-font-size-body: 14px;
+  --fluent-font-size-caption: 12px;
+  --fluent-font-size-small: 10px;
+
+  --fluent-font-weight-regular: 400;
+  --fluent-font-weight-semibold: 600;
+  --fluent-font-weight-bold: 700;
+
+  --fluent-line-height-hero: 36px;
+  --fluent-line-height-h1: 32px;
+  --fluent-line-height-h2: 28px;
+  --fluent-line-height-h3: 24px;
+  --fluent-line-height-body: 20px;
+  --fluent-line-height-caption: 16px;
+
+  /* === Border Radius === */
+  --fluent-radius-none: 0;
+  --fluent-radius-s: 4px;
+  --fluent-radius-m: 8px;
+  --fluent-radius-l: 12px;
+  --fluent-radius-xl: 16px;
+  --fluent-radius-circular: 50%;
+
+  /* === Shadows === */
+  --fluent-shadow-2: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --fluent-shadow-4: 0 2px 4px rgba(0, 0, 0, 0.14);
+  --fluent-shadow-8: 0 4px 8px rgba(0, 0, 0, 0.14);
+  --fluent-shadow-16: 0 8px 16px rgba(0, 0, 0, 0.14);
+  --fluent-shadow-28: 0 14px 28px rgba(0, 0, 0, 0.14);
+
+  /* === Transitions === */
+  --fluent-duration-ultra-fast: 50ms;
+  --fluent-duration-fast: 100ms;
+  --fluent-duration-normal: 200ms;
+  --fluent-duration-slow: 300ms;
+  --fluent-duration-slower: 500ms;
+  --fluent-easing-standard: cubic-bezier(0.33, 0, 0.67, 1);
+  --fluent-easing-decelerate: cubic-bezier(0, 0, 0, 1);
+  --fluent-easing-accelerate: cubic-bezier(1, 0, 1, 1);
+
+  /* === Z-Index Scale === */
+  --fluent-z-base: 0;
+  --fluent-z-above: 1;
+  --fluent-z-dropdown: 1000;
+  --fluent-z-sticky: 1100;
+  --fluent-z-overlay: 1200;
+  --fluent-z-modal: 1300;
+  --fluent-z-toast: 1400;
+  --fluent-z-tooltip: 1500;
+}

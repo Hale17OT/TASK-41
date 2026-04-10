@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.DeliveryJobMapper">
+
+    <resultMap id="DeliveryJobResultMap" type="DeliveryJob">
+        <id property="id" column="id"/>
+        <result property="trackingNumber" column="tracking_number"/>
+        <result property="status" column="status"/>
+        <result property="courierId" column="courier_id"/>
+        <result property="dispatcherId" column="dispatcher_id"/>
+        <result property="senderName" column="sender_name"/>
+        <result property="senderAddress" column="sender_address"/>
+        <result property="senderPhoneEncrypted" column="sender_phone_enc"/>
+        <result property="receiverName" column="receiver_name"/>
+        <result property="receiverAddress" column="receiver_address"/>
+        <result property="receiverPhoneEncrypted" column="receiver_phone_enc"/>
+        <result property="receiverState" column="receiver_state"/>
+        <result property="receiverZip" column="receiver_zip"/>
+        <result property="weightLbs" column="weight_lbs"/>
+        <result property="orderAmount" column="order_amount"/>
+        <result property="adminOverride" column="admin_override"/>
+        <result property="overrideComment" column="override_comment"/>
+        <result property="lastEventAt" column="last_event_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="customerToken" column="customer_token"/>
+        <result property="version" column="version"/>
+    </resultMap>
+
+    <select id="findById" resultMap="DeliveryJobResultMap">
+        SELECT * FROM delivery_jobs WHERE id = #{id}
+    </select>
+
+    <select id="findByTrackingNumber" resultMap="DeliveryJobResultMap">
+        SELECT * FROM delivery_jobs WHERE tracking_number = #{trackingNumber}
+    </select>
+
+    <select id="findByStatus" resultMap="DeliveryJobResultMap">
+        SELECT * FROM delivery_jobs
+        <where>
+            <if test="status != null and status != ''">
+                status = #{status}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findByCourierId" resultMap="DeliveryJobResultMap">
+        SELECT * FROM delivery_jobs
+        WHERE courier_id = #{courierId}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findByCourierIdAndStatus" resultMap="DeliveryJobResultMap">
+        SELECT * FROM delivery_jobs
+        WHERE courier_id = #{courierId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByCourierId" resultType="int">
+        SELECT COUNT(*) FROM delivery_jobs
+        WHERE courier_id = #{courierId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <select id="findIdleLongerThan" resultMap="DeliveryJobResultMap">
+        SELECT * FROM delivery_jobs
+        WHERE status NOT IN ('DELIVERED', 'EXCEPTION')
+          AND last_event_at &lt; DATE_SUB(NOW(), INTERVAL #{minutes} MINUTE)
+        ORDER BY last_event_at ASC
+    </select>
+
+    <select id="countByCourierAndActiveStatuses" resultType="int">
+        SELECT COUNT(*) FROM delivery_jobs
+        WHERE courier_id = #{courierId}
+          AND status IN ('CREATED', 'PICKED', 'IN_TRANSIT')
+    </select>
+
+    <select id="search" resultMap="DeliveryJobResultMap">
+        SELECT * FROM delivery_jobs
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (tracking_number LIKE CONCAT('%', #{keyword}, '%')
+                  OR sender_name LIKE CONCAT('%', #{keyword}, '%')
+                  OR receiver_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="startDate != null">
+                AND created_at &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND created_at &lt; #{endDate}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM delivery_jobs
+    </select>
+
+    <select id="countByStatus" resultType="int">
+        SELECT COUNT(*) FROM delivery_jobs WHERE status = #{status}
+    </select>
+
+    <insert id="insert" parameterType="DeliveryJob" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO delivery_jobs (tracking_number, status, courier_id, dispatcher_id,
+                                   sender_name, sender_address, sender_phone_enc,
+                                   receiver_name, receiver_address, receiver_phone_enc,
+                                   receiver_state, receiver_zip, weight_lbs, order_amount,
+                                   customer_token, admin_override, override_comment, last_event_at, version)
+        VALUES (#{trackingNumber}, #{status}, #{courierId}, #{dispatcherId},
+                #{senderName}, #{senderAddress}, #{senderPhoneEncrypted},
+                #{receiverName}, #{receiverAddress}, #{receiverPhoneEncrypted},
+                #{receiverState}, #{receiverZip}, #{weightLbs}, #{orderAmount},
+                #{customerToken}, #{adminOverride}, #{overrideComment}, #{lastEventAt}, 1)
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE delivery_jobs
+        SET status     = #{status},
+            version    = version + 1,
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND version = #{expectedVersion}
+    </update>
+
+    <update id="updateCourier">
+        UPDATE delivery_jobs
+        SET courier_id = #{courierId},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateLastEventAt">
+        UPDATE delivery_jobs
+        SET last_event_at = #{lastEventAt},
+            updated_at    = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateCustomerToken">
+        UPDATE delivery_jobs
+        SET customer_token = #{customerToken},
+            updated_at     = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="adminOverride">
+        UPDATE delivery_jobs
+        SET admin_override  = 1,
+            override_comment = #{overrideComment},
+            updated_at       = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

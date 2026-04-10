@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.TaskRecipientMapper">
+
+    <resultMap id="TaskRecipientResultMap" type="TaskRecipient">
+        <id property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="inboxType" column="inbox_type"/>
+        <result property="readAt" column="read_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findByTaskId" resultMap="TaskRecipientResultMap">
+        SELECT * FROM task_recipients WHERE task_id = #{taskId} ORDER BY created_at ASC
+    </select>
+
+    <select id="findByUserAndInboxType" resultMap="TaskRecipientResultMap">
+        SELECT tr.*
+        FROM task_recipients tr
+        INNER JOIN internal_tasks it ON tr.task_id = it.id
+        WHERE tr.user_id = #{userId}
+          AND tr.inbox_type = #{inboxType}
+        ORDER BY it.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUserAndInboxType" resultType="int">
+        SELECT COUNT(*)
+        FROM task_recipients tr
+        INNER JOIN internal_tasks it ON tr.task_id = it.id
+        WHERE tr.user_id = #{userId}
+          AND tr.inbox_type = #{inboxType}
+    </select>
+
+    <insert id="insert" parameterType="TaskRecipient">
+        INSERT INTO task_recipients (task_id, user_id, inbox_type)
+        VALUES (#{taskId}, #{userId}, #{inboxType})
+    </insert>
+
+    <update id="updateInboxType">
+        UPDATE task_recipients
+        SET inbox_type = #{newType}
+        WHERE task_id = #{taskId}
+          AND user_id = #{userId}
+          AND inbox_type = #{oldType}
+    </update>
+
+    <update id="markRead">
+        UPDATE task_recipients
+        SET read_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

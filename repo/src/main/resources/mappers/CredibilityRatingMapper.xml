@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.CredibilityRatingMapper">
+
+    <resultMap id="CredibilityRatingResultMap" type="CredibilityRating">
+        <id property="id" column="id"/>
+        <result property="courierId" column="courier_id"/>
+        <result property="jobId" column="job_id"/>
+        <result property="raterId" column="rater_id"/>
+        <result property="timeliness" column="timeliness"/>
+        <result property="attitude" column="attitude"/>
+        <result property="accuracy" column="accuracy"/>
+        <result property="raterType" column="rater_type"/>
+        <result property="comment" column="comment"/>
+        <result property="customerName" column="customer_name"/>
+        <result property="excluded" column="is_excluded"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="CredibilityRatingResultMap">
+        SELECT * FROM credibility_ratings WHERE id = #{id}
+    </select>
+
+    <select id="findByCourierId" resultMap="CredibilityRatingResultMap">
+        SELECT * FROM credibility_ratings
+        WHERE courier_id = #{courierId}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="calculateAvgRating30d" resultType="java.math.BigDecimal">
+        SELECT AVG((timeliness + attitude + accuracy) / 3.0)
+        FROM credibility_ratings
+        WHERE courier_id = #{courierId}
+          AND is_excluded = 0
+          AND created_at &gt;= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    </select>
+
+    <insert id="insert" parameterType="CredibilityRating">
+        INSERT INTO credibility_ratings (courier_id, job_id, rater_id, rater_type, timeliness, attitude, accuracy, comment, customer_name)
+        VALUES (#{courierId}, #{jobId}, #{raterId}, #{raterType}, #{timeliness}, #{attitude}, #{accuracy}, #{comment}, #{customerName})
+    </insert>
+
+    <select id="findByJobId" resultMap="CredibilityRatingResultMap">
+        SELECT * FROM credibility_ratings
+        WHERE job_id = #{jobId} AND is_excluded = 0
+        ORDER BY created_at DESC
+    </select>
+
+    <update id="excludeRating">
+        UPDATE credibility_ratings
+        SET is_excluded = 1
+        WHERE id = #{id}
+    </update>
+
+    <select id="countByCourierId" resultType="int">SELECT COUNT(*) FROM credibility_ratings WHERE courier_id = #{courierId}</select>
+</mapper>

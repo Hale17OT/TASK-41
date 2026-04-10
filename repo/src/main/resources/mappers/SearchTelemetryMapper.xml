@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.SearchTelemetryMapper">
+
+    <insert id="insert" parameterType="SearchTelemetry" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO search_telemetry (user_id, query_text, result_count)
+        VALUES (#{userId}, #{queryText}, #{resultCount})
+    </insert>
+
+    <select id="aggregateTopTerms" resultType="TrendingTerm">
+        SELECT query_text AS term,
+               COUNT(*)   AS searchCount,
+               MIN(searched_at) AS periodStart,
+               MAX(searched_at) AS periodEnd,
+               NOW()      AS calculatedAt
+        FROM search_telemetry
+        WHERE searched_at &gt;= #{since}
+        GROUP BY query_text
+        ORDER BY searchCount DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

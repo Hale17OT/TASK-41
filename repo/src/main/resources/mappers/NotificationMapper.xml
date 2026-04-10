@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.NotificationMapper">
+
+    <resultMap id="NotificationResultMap" type="Notification">
+        <id property="id" column="id"/>
+        <result property="recipientId" column="recipient_id"/>
+        <result property="type" column="type"/>
+        <result property="title" column="title"/>
+        <result property="body" column="body"/>
+        <result property="linkType" column="link_type"/>
+        <result property="linkId" column="link_id"/>
+        <result property="read" column="is_read"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="NotificationResultMap">
+        SELECT * FROM notifications WHERE id = #{id}
+    </select>
+
+    <select id="findByRecipientId" resultMap="NotificationResultMap">
+        SELECT * FROM notifications
+        WHERE recipient_id = #{recipientId}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findUnreadByRecipientId" resultMap="NotificationResultMap">
+        SELECT * FROM notifications
+        WHERE recipient_id = #{recipientId}
+          AND is_read = 0
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findNewSince" resultMap="NotificationResultMap">
+        SELECT * FROM notifications
+        WHERE recipient_id = #{recipientId}
+          AND created_at &gt; #{since}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="countUnread" resultType="int">
+        SELECT COUNT(*) FROM notifications
+        WHERE recipient_id = #{recipientId}
+          AND is_read = 0
+    </select>
+
+    <select id="findReadByRecipientId" resultMap="NotificationResultMap">
+        SELECT * FROM notifications
+        WHERE recipient_id = #{recipientId}
+          AND is_read = 1
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countReadByRecipientId" resultType="int">
+        SELECT COUNT(*) FROM notifications
+        WHERE recipient_id = #{recipientId}
+          AND is_read = 1
+    </select>
+
+    <select id="findUnreadByRecipientIdPaged" resultMap="NotificationResultMap">
+        SELECT * FROM notifications
+        WHERE recipient_id = #{recipientId}
+          AND is_read = 0
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <insert id="insert" parameterType="Notification" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notifications (recipient_id, type, title, body, link_type, link_id)
+        VALUES (#{recipientId}, #{type}, #{title}, #{body}, #{linkType}, #{linkId})
+    </insert>
+
+    <update id="markRead">
+        UPDATE notifications
+        SET is_read = 1
+        WHERE id = #{id}
+    </update>
+
+    <update id="markAllRead">
+        UPDATE notifications
+        SET is_read = 1
+        WHERE recipient_id = #{recipientId}
+          AND is_read = 0
+    </update>
+
+    <select id="countAll" resultType="int">SELECT COUNT(*) FROM notifications</select>
+    <select id="countByRecipientId" resultType="int">SELECT COUNT(*) FROM notifications WHERE recipient_id = #{recipientId}</select>
+</mapper>

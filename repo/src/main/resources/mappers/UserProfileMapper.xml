@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.UserProfileMapper">
+
+    <resultMap id="UserProfileResultMap" type="UserProfile">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="bio" column="bio"/>
+        <result property="idNumberEncrypted" column="id_number_enc"/>
+        <result property="addressEncrypted" column="address_enc"/>
+        <result property="emergencyContactEncrypted" column="emergency_contact_enc"/>
+        <result property="avatarPath" column="avatar_path"/>
+        <result property="visibilityLevel" column="visibility_level"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findByUserId" resultMap="UserProfileResultMap">
+        SELECT * FROM user_profiles WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insert" parameterType="UserProfile" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_profiles (user_id, bio, id_number_enc, address_enc, emergency_contact_enc,
+                                   avatar_path, visibility_level)
+        VALUES (#{userId}, #{bio}, #{idNumberEncrypted}, #{addressEncrypted}, #{emergencyContactEncrypted},
+                #{avatarPath}, #{visibilityLevel})
+    </insert>
+
+    <update id="update" parameterType="UserProfile">
+        UPDATE user_profiles
+        SET bio                    = #{bio},
+            id_number_enc          = #{idNumberEncrypted},
+            address_enc            = #{addressEncrypted},
+            emergency_contact_enc  = #{emergencyContactEncrypted},
+            avatar_path            = #{avatarPath},
+            visibility_level       = #{visibilityLevel},
+            updated_at             = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.LedgerEntryMapper">
+
+    <resultMap id="LedgerEntryResultMap" type="LedgerEntry">
+        <id property="id" column="id"/>
+        <result property="paymentId" column="payment_id"/>
+        <result property="accountId" column="account_id"/>
+        <result property="entryType" column="entry_type"/>
+        <result property="amount" column="amount"/>
+        <result property="balanceAfter" column="balance_after"/>
+        <result property="description" column="description"/>
+        <result property="referenceType" column="reference_type"/>
+        <result property="referenceId" column="reference_id"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="LedgerEntryResultMap">
+        SELECT * FROM ledger_entries WHERE id = #{id}
+    </select>
+
+    <select id="findByAccountId" resultMap="LedgerEntryResultMap">
+        SELECT * FROM ledger_entries
+        WHERE account_id = #{accountId}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findByPaymentId" resultMap="LedgerEntryResultMap">
+        SELECT * FROM ledger_entries WHERE payment_id = #{paymentId} ORDER BY id ASC
+    </select>
+
+    <select id="calculateBalance" resultType="java.math.BigDecimal">
+        SELECT COALESCE(
+            (SELECT balance_after FROM ledger_entries
+             WHERE account_id = #{accountId}
+             ORDER BY id DESC LIMIT 1),
+            0)
+    </select>
+
+    <select id="findByDateRange" resultMap="LedgerEntryResultMap">
+        SELECT * FROM ledger_entries
+        WHERE created_at &gt;= CONCAT(#{from}, ' 00:00:00')
+          AND created_at &lt;= CONCAT(#{to}, ' 23:59:59')
+        ORDER BY created_at ASC
+    </select>
+
+    <insert id="insert" parameterType="LedgerEntry" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ledger_entries (payment_id, account_id, entry_type, amount, balance_after,
+                                    description, reference_type, reference_id)
+        VALUES (#{paymentId}, #{accountId}, #{entryType}, #{amount}, #{balanceAfter},
+                #{description}, #{referenceType}, #{referenceId})
+    </insert>
+
+    <select id="countByAccountId" resultType="int">SELECT COUNT(*) FROM ledger_entries WHERE account_id = #{accountId}</select>
+</mapper>

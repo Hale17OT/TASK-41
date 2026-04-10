@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.ContractInstanceMapper">
+
+    <resultMap id="ContractInstanceResultMap" type="ContractInstance">
+        <id property="id" column="id"/>
+        <result property="templateVersionId" column="template_version_id"/>
+        <result property="snapshotBodyText" column="snapshot_body_text"/>
+        <result property="renderedText" column="rendered_text"/>
+        <result property="placeholderValues" column="placeholder_values"/>
+        <result property="jobId" column="job_id"/>
+        <result property="generatedBy" column="generated_by"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="ContractInstanceResultMap">
+        SELECT * FROM contract_instances WHERE id = #{id}
+    </select>
+
+    <select id="findByJobId" resultMap="ContractInstanceResultMap">
+        SELECT * FROM contract_instances WHERE job_id = #{jobId} ORDER BY created_at DESC
+    </select>
+
+    <select id="findByStatus" resultMap="ContractInstanceResultMap">
+        SELECT * FROM contract_instances
+        WHERE status = #{status}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <insert id="insert" parameterType="ContractInstance" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO contract_instances (template_version_id, snapshot_body_text, rendered_text,
+                                        placeholder_values, job_id, generated_by, status)
+        VALUES (#{templateVersionId}, #{snapshotBodyText}, #{renderedText},
+                #{placeholderValues}, #{jobId}, #{generatedBy}, #{status})
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE contract_instances
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,9 @@
+{
+    "prompt": "Develop an offline-ready, LAN-based courier operations and settlement platform called DispatchOps. The system requires Courier Fulfillment Control with color-coded idle warnings, Internal Task Collaboration using optimistic locking, and a Credibility Management system with credit levels A-D and daily batch recalculation. Include Contract Templating with versioned templates and HMAC tamper-evident local e-signatures. Payments & Settlement must use a double-entry ledger, be offline-ready with idempotency, and support reconciliation exports. Notifications should use long-polling via a jQuery frontend. The API should be built with Java 17, Spring MVC 6.1, and MyBatis 3.5, using a MySQL 8.4 database. Roles include Administrator, Operations Manager, Dispatcher, Courier, and Auditor with tiered access and AES-256 encryption for PII.",
+    "project_type": "fullstack",
+    "frontend_language": "JavaScript",
+    "backend_language": "Java",
+    "frontend_framework": "jQuery",
+    "backend_framework": "Spring MVC",
+    "database": "MySQL"
+}

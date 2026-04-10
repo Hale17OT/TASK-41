@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.SigningRecordMapper">
+
+    <resultMap id="SigningRecordResultMap" type="SigningRecord">
+        <id property="id" column="id"/>
+        <result property="contractInstanceId" column="contract_instance_id"/>
+        <result property="signerId" column="signer_id"/>
+        <result property="signerOrder" column="signer_order"/>
+        <result property="signatureData" column="signature_data"/>
+        <result property="documentHash" column="document_hash"/>
+        <result property="signedAt" column="signed_at"/>
+        <result property="ipAddress" column="ip_address"/>
+    </resultMap>
+
+    <select id="findById" resultMap="SigningRecordResultMap">
+        SELECT * FROM signing_records WHERE id = #{id}
+    </select>
+
+    <select id="findByContractInstanceId" resultMap="SigningRecordResultMap">
+        SELECT * FROM signing_records
+        WHERE contract_instance_id = #{contractInstanceId}
+        ORDER BY signer_order ASC
+    </select>
+
+    <select id="countByContractInstanceId" resultType="int">
+        SELECT COUNT(*) FROM signing_records WHERE contract_instance_id = #{contractInstanceId}
+    </select>
+
+    <insert id="insert" parameterType="SigningRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO signing_records (contract_instance_id, signer_id, signer_order,
+                                     signature_data, document_hash, ip_address)
+        VALUES (#{contractInstanceId}, #{signerId}, #{signerOrder},
+                #{signatureData}, #{documentHash}, #{ipAddress})
+    </insert>
+
+</mapper>

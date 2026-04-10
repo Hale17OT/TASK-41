@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.InternalTaskMapper">
+
+    <resultMap id="InternalTaskResultMap" type="InternalTask">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="body" column="body"/>
+        <result property="status" column="status"/>
+        <result property="creatorId" column="creator_id"/>
+        <result property="assigneeId" column="assignee_id"/>
+        <result property="dueTime" column="due_time"/>
+        <result property="showOnCalendar" column="show_on_calendar"/>
+        <result property="jobId" column="job_id"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="version" column="version"/>
+    </resultMap>
+
+    <select id="findById" resultMap="InternalTaskResultMap">
+        SELECT * FROM internal_tasks WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="InternalTaskResultMap">
+        SELECT * FROM internal_tasks ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findByJobId" resultMap="InternalTaskResultMap">
+        SELECT * FROM internal_tasks WHERE job_id = #{jobId} ORDER BY created_at DESC
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM internal_tasks
+    </select>
+
+    <insert id="insert" parameterType="InternalTask" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO internal_tasks (title, body, status, creator_id, assignee_id, due_time, show_on_calendar, job_id, version)
+        VALUES (#{title}, #{body}, #{status}, #{creatorId}, #{assigneeId}, #{dueTime}, #{showOnCalendar}, #{jobId}, 1)
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE internal_tasks
+        SET status     = #{status},
+            version    = version + 1,
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND version = #{expectedVersion}
+    </update>
+
+    <update id="updateDueTime">
+        UPDATE internal_tasks
+        SET due_time   = #{dueTime},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="findCalendarTasks" resultMap="InternalTaskResultMap">
+        SELECT DISTINCT it.*
+        FROM internal_tasks it
+        INNER JOIN task_recipients tr ON it.id = tr.task_id
+        WHERE tr.user_id = #{userId}
+          AND it.show_on_calendar = 1
+          AND it.due_time IS NOT NULL
+          AND it.due_time &gt;= #{from}
+          AND it.due_time &lt; #{to}
+        ORDER BY it.due_time ASC
+    </select>
+
+</mapper>

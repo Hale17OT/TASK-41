@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.SynonymMappingMapper">
+
+    <resultMap id="SynonymMappingResultMap" type="SynonymMapping">
+        <id property="id" column="id"/>
+        <result property="term" column="term"/>
+        <result property="synonym" column="synonym"/>
+    </resultMap>
+
+    <select id="findByTerm" resultMap="SynonymMappingResultMap">
+        SELECT * FROM synonym_mappings WHERE term = #{term}
+    </select>
+
+    <insert id="insert" parameterType="SynonymMapping" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO synonym_mappings (term, synonym)
+        VALUES (#{term}, #{synonym})
+    </insert>
+
+</mapper>

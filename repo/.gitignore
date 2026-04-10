@@ -1,0 +1,14 @@
+target/
+*.class
+*.jar
+*.war
+.env
+uploads/*
+!uploads/.gitkeep
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+.temp/

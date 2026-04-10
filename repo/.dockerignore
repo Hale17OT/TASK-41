@@ -1,0 +1,8 @@
+.git
+.temp
+*.md
+.env
+target/
+uploads/
+e2e/
+node_modules/

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.ProfileFieldVisibilityMapper">
+
+    <select id="findByUserId" resultType="java.util.HashMap">
+        SELECT field_name AS fieldName, visibility_tier AS visibilityTier
+        FROM profile_field_visibility
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO profile_field_visibility (user_id, field_name, visibility_tier)
+        VALUES (#{userId}, #{fieldName}, #{visibilityTier})
+        ON DUPLICATE KEY UPDATE visibility_tier = VALUES(visibility_tier)
+    </insert>
+
+</mapper>

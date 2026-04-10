@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.FulfillmentEventMapper">
+
+    <resultMap id="FulfillmentEventResultMap" type="FulfillmentEvent">
+        <id property="id" column="id"/>
+        <result property="jobId" column="job_id"/>
+        <result property="eventType" column="event_type"/>
+        <result property="oldStatus" column="old_status"/>
+        <result property="newStatus" column="new_status"/>
+        <result property="adjustmentRef" column="adjustment_ref"/>
+        <result property="actorId" column="actor_id"/>
+        <result property="comment" column="comment"/>
+        <result property="deviceSeqId" column="device_seq_id"/>
+        <result property="deviceId" column="device_id"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="FulfillmentEventResultMap">
+        SELECT * FROM fulfillment_events WHERE id = #{id}
+    </select>
+
+    <select id="findByJobId" resultMap="FulfillmentEventResultMap">
+        SELECT * FROM fulfillment_events
+        WHERE job_id = #{jobId}
+        ORDER BY created_at ASC
+    </select>
+
+    <insert id="insert" parameterType="FulfillmentEvent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO fulfillment_events (job_id, event_type, old_status, new_status,
+                                        adjustment_ref, actor_id, comment,
+                                        device_seq_id, device_id)
+        VALUES (#{jobId}, #{eventType}, #{oldStatus}, #{newStatus},
+                #{adjustmentRef}, #{actorId}, #{comment},
+                #{deviceSeqId}, #{deviceId})
+    </insert>
+
+</mapper>

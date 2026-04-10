@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <!-- Web layer: request/response summaries -->
+        <Logger name="com.dispatchops.web" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <!-- Application services: business events -->
+        <Logger name="com.dispatchops.application" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <!-- Domain logic: INFO in production (set to DEBUG only for troubleshooting) -->
+        <Logger name="com.dispatchops.domain" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <!-- Persistence: INFO in production (DEBUG can leak query params/addresses) -->
+        <Logger name="com.dispatchops.infrastructure.persistence" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <!-- Security: WARN to prevent accidental secret/token logging -->
+        <Logger name="com.dispatchops.infrastructure.security" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+
+</Configuration>

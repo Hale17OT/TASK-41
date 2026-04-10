@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dispatchops.infrastructure.persistence.mapper.ContractTemplateVersionMapper">
+
+    <resultMap id="ContractTemplateVersionResultMap" type="ContractTemplateVersion">
+        <id property="id" column="id"/>
+        <result property="templateId" column="template_id"/>
+        <result property="versionNumber" column="version_number"/>
+        <result property="bodyText" column="body_text"/>
+        <result property="placeholderSchema" column="placeholder_schema"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="ContractTemplateVersionResultMap">
+        SELECT * FROM contract_template_versions WHERE id = #{id}
+    </select>
+
+    <select id="findByTemplateId" resultMap="ContractTemplateVersionResultMap">
+        SELECT * FROM contract_template_versions
+        WHERE template_id = #{templateId}
+        ORDER BY version_number ASC
+    </select>
+
+    <select id="findLatestVersion" resultMap="ContractTemplateVersionResultMap">
+        SELECT * FROM contract_template_versions
+        WHERE template_id = #{templateId}
+        ORDER BY version_number DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="ContractTemplateVersion" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO contract_template_versions (template_id, version_number, body_text, placeholder_schema, created_by)
+        VALUES (#{templateId}, #{versionNumber}, #{bodyText}, #{placeholderSchema}, #{createdBy})
+    </insert>
+
+</mapper>
