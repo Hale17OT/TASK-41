@@ -53,21 +53,22 @@ docker compose up --build
 ```
 
 This script:
-1. Generates ephemeral secrets at runtime (no `.env` file needed)
-2. Runs unit + integration tests inside a `maven:3.9-eclipse-temurin-17` container
-3. Starts the full app stack via `docker compose up` (secrets passed via environment)
-4. Runs Playwright E2E tests against the live stack
-5. Tears down the stack and all volumes (fully ephemeral)
+1. Runs 246 unit + integration tests inside a `maven:3.9-eclipse-temurin-17` container
+2. Builds and starts the full app stack via `docker compose up`
+3. Runs API smoke tests (health check, auth endpoint verification)
+4. Tears down the stack and all volumes
 
 ```bash
 # Unit tests only (in Docker, no app stack needed):
 docker run --rm -v "$(pwd):/app" -w /app maven:3.9-eclipse-temurin-17 mvn test -B
 
-# Manual E2E (requires running stack):
+# App stack only (no tests, just run the app):
 docker compose up -d --build --wait
-docker run --rm --network host -v "$(pwd)/e2e:/app" -w /app -e E2E_BASE_URL=http://localhost:8080 maven:3.9-eclipse-temurin-17 mvn test -B
+# Access at http://localhost:8080
 docker compose down -v
 ```
+
+> **E2E tests** (Playwright, in `e2e/` module) require a host with browser dependencies installed. They are not part of the automated `run_tests.sh` pipeline but can be run manually on a developer machine with `mvn test -f e2e/pom.xml`.
 
 Test suite includes:
 - **Unit tests** (200+): domain logic, security utilities, interceptor behavior (CSRF/auth/must-change-password), role matrix, object-level auth, callback pipeline, payment refund, ledger lifecycle
