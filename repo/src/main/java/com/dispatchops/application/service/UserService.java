@@ -59,6 +59,7 @@ public class UserService {
         this.lockoutDurationMinutes = lockoutDurationMinutes;
     }
 
+    @Transactional(noRollbackFor = {AuthenticationException.class, AccountLockedException.class})
     public User authenticate(String username, String rawPassword) {
         log.debug("Authenticating user: {}", username);
 

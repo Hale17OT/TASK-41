@@ -1,5 +1,7 @@
 # DispatchOps -- Courier Operations & Settlement System
 
+**Project Type:** Fullstack (web backend + JSP/jQuery frontend, served from a single Spring MVC WAR)
+
 An offline-ready, LAN-based courier operations and settlement platform. Runs entirely on a local organizational server with no external internet dependencies.
 
 ## Features
@@ -27,72 +29,87 @@ An offline-ready, LAN-based courier operations and settlement platform. Runs ent
 
 - Docker Desktop 4.x+
 - Docker Compose v2+
-- (Optional for local dev) Java 17, Maven 3.9+, MySQL 8.4
+
+Nothing else is required on the host — no Java, Maven, MySQL, `npm install`, `pip install`, or manual DB setup. The entire stack (app + database + tests) runs inside Docker.
 
 ## Quick Start
 
 ```bash
-# Clone and configure
+# 1. Clone and configure
 cp .env.example .env
-# REQUIRED: Fill in ALL secrets in .env before starting.
+# REQUIRED: fill in ALL secrets in .env before starting.
 # Generate AES/HMAC keys: openssl rand -hex 32
 # Set DB passwords to strong unique values.
-docker compose up --build
 
-# App available at http://localhost:8080
-# Bootstrap admin credentials are in seed data - CHANGE IMMEDIATELY after first login.
+# 2. Start the full stack (app + MySQL) in Docker
+docker-compose up --build
+#   — or, with Docker Compose v2 plugin syntax (equivalent):
+#     docker compose up --build
 ```
+
+> Both `docker-compose up` (Compose v1 / hyphenated binary) and `docker compose up` (Compose v2 plugin) are supported — pick whichever your Docker install provides.
+
+**Access the application:** http://localhost:8080 (redirects to `/login`).
+
+### How to verify it works
+
+1. Open http://localhost:8080/login in a browser.
+2. Log in with any demo credential below. The seeded users have `must_change_password=1`, so you'll be redirected to `/change-password` on first login — set a new password and you'll land on the dashboard.
+3. Smoke-test the API with curl:
+   ```bash
+   curl http://localhost:8080/api/health        # → {"status":"UP"}
+   curl -i -X POST http://localhost:8080/api/auth/login \
+        -H "Content-Type: application/json" \
+        -d '{"username":"admin","password":"Admin123!"}'
+   ```
+4. Exercise flows through the UI: create a delivery job at `/fulfillment`, view credibility at `/credibility`, record a payment at `/payments`, file a customer appeal at `/customer`.
+
+## Demo Credentials
+
+All seeded users share the bootstrap password **`Admin123!`** and have `must_change_password=1` — the UI forces a password change on first login. The helpers in `BaseE2ETest` use `TestPass123!` as the post-change password.
+
+| Username     | Password (initial) | Role         | What they can do                                              |
+|--------------|--------------------|--------------|---------------------------------------------------------------|
+| `admin`      | `Admin123!`        | ADMIN        | Full system access (users, settings, all business features)   |
+| `ops_manager`| `Admin123!`        | OPS_MANAGER  | Jobs, tasks, credibility, contracts, payments                 |
+| `dispatcher1`| `Admin123!`        | DISPATCHER   | Create/assign jobs, rate couriers, create tasks               |
+| `courier1`   | `Admin123!`        | COURIER      | View/update assigned jobs, view credibility, sign contracts   |
+| `courier2`   | `Admin123!`        | COURIER      | Second courier account for RBAC/visibility tests              |
+| `auditor1`   | `Admin123!`        | AUDITOR      | Reconciliation, ledger access, settle payments, verify contracts |
+
+> These are bootstrap-only credentials. Change them in production.
 
 ## Testing
 
-**Prerequisites:** Docker and Docker Compose only. No local Maven or JDK required.
+**Prerequisites:** Docker and Docker Compose only. No local Maven, JDK, or browser dependencies required — everything (including Playwright/Chromium) runs inside the Maven container.
 
 ```bash
 # Full test suite — runs entirely in Docker:
 ./run_tests.sh
 ```
 
-This script:
-1. Runs 246 unit + integration tests inside a `maven:3.9-eclipse-temurin-17` container
-2. Builds and starts the full app stack via `docker compose up`
-3. Runs API smoke tests (health check, auth endpoint verification)
-4. Tears down the stack and all volumes
+The script has three explicit stages:
+1. **Unit + integration tests** — `mvn test` inside `maven:3.9-eclipse-temurin-17` (`run_tests.sh:20-25`).
+2. **Application stack up + health check** — `docker compose up -d --build --wait`, then `curl /api/health` loop (`run_tests.sh:43-66`).
+3. **Playwright E2E suite** — `mvn -f e2e/pom.xml test` inside the same Maven image on the host Docker network, pointed at `http://localhost:8080` via `E2E_BASE_URL` (`run_tests.sh:77-92`). The script captures the Maven exit code and **exits non-zero if any E2E test fails**.
 
-```bash
-# Unit tests only (in Docker, no app stack needed):
-docker run --rm -v "$(pwd):/app" -w /app maven:3.9-eclipse-temurin-17 mvn test -B
-
-# App stack only (no tests, just run the app):
-docker compose up -d --build --wait
-# Access at http://localhost:8080
-docker compose down -v
-```
-
-> **E2E tests** (Playwright, in `e2e/` module) require a host with browser dependencies installed. They are not part of the automated `run_tests.sh` pipeline but can be run manually on a developer machine with `mvn test -f e2e/pom.xml`.
+Afterwards the stack is torn down with `docker compose down -v`. Everything is ephemeral — no state leaks between runs.
 
 Test suite includes:
-- **Unit tests** (200+): domain logic, security utilities, interceptor behavior (CSRF/auth/must-change-password), role matrix, object-level auth, callback pipeline, payment refund, ledger lifecycle
-- **Controller tests** (MockMvc): role authorization matrix, object-level access, callback endpoint, admin protection, dashboard authorization
-- **E2E tests** (Playwright, in `e2e/` module): auth flows, RBAC, fulfillment, payments, contracts, credibility, search, customer ratings
-- **All tests run inside Docker** — no host-level Maven/JDK installation required
+- **Unit + domain tests**: business rules (credit-level calculation, appeal window, status transitions, contract HMAC integrity, refund window), security utilities (AES/HMAC/BCrypt), interceptor behavior (CSRF, auth, must-change-password)
+- **Controller tests** (Spring MockMvc): role authorization matrix, object-level access, admin protection, dashboard authorization, payment callback validation
+- **E2E tests** (Playwright, `e2e/` module) — real HTTP against the live stack, no mocking:
+  - `AuthFlowTest` — login, logout, lockout, session redirect, health endpoint
+  - `RBACFlowTest` — cross-role access checks against every major controller
+  - `FulfillmentFlowTest` — job create/assign/status, pick/sort list generation
+  - `TaskFlowTest` — inbox tabs, task create, calendar view
+  - `PaymentFlowTest` — record/settle/refund, idempotency, reconciliation export
+  - `ContractFlowTest` — templates, versions, integrity verification
+  - `CredibilityFlowTest` + `CustomerCredibilityFlowTest` — ratings, violations, appeals (internal and customer-facing)
+  - `SearchFlowTest` + `SearchIntegrationFlowTest` — full-text search, trending, suggestions; create-then-search integration
+  - `EndpointCoverageFlowTest` — exercises every remaining REST endpoint end-to-end via real HTTP
 
-### Local (non-Docker) development
-
-```bash
-# Required environment variables:
-export JDBC_URL=jdbc:mysql://localhost:3306/dispatchops?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-export DB_USER=dispatchops_app
-export DB_PASSWORD=your_password
-export AES_SECRET_KEY=$(openssl rand -hex 32)
-export HMAC_SECRET_KEY=$(openssl rand -hex 32)
-
-# Build and run tests:
-mvn clean test
-
-# Package WAR and deploy to Tomcat:
-mvn package -DskipTests
-# Deploy target/dispatchops.war to Tomcat webapps/
-```
+All tests run inside Docker.
 
 ## Architecture
 

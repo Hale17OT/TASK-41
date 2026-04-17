@@ -15,7 +15,7 @@ PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Step 1: Unit + Integration tests in Docker container
 # ---------------------------------------------------------
 echo ""
-echo "[1/2] Running Unit + Integration Tests in Docker..."
+echo "[1/3] Running Unit + Integration Tests in Docker..."
 
 docker run --rm \
     -v "${PROJECT_DIR}:/app" \
@@ -33,13 +33,12 @@ fi
 echo "Unit + Integration tests PASSED"
 
 # ---------------------------------------------------------
-# Step 2: Application stack smoke test
+# Step 2: Start full app stack and run smoke check
 # docker-compose.yml has built-in defaults for all secrets
 # ---------------------------------------------------------
 echo ""
-echo "[2/2] Running Application Stack Smoke Test..."
+echo "[2/3] Starting Application Stack..."
 
-echo "  Starting application stack..."
 docker compose up -d --build --wait
 
 # Health-check loop
@@ -59,25 +58,85 @@ fi
 
 echo "  Health check PASSED"
 
-# Smoke test: verify key API endpoints respond
-echo "  Testing API endpoints..."
-curl -sf http://localhost:8080/api/health | grep -q '"code":200' || { echo "FAIL: /api/health"; docker compose down -v; exit 1; }
-echo "    /api/health ............ OK"
+# Quick smoke test: verify /api/health responds
+curl -sf http://localhost:8080/api/health | grep -q '"code":200' || {
+    echo "FAIL: /api/health did not return expected payload"
+    docker compose down -v
+    exit 1
+}
+echo "  /api/health smoke check PASSED"
 
-# Test login endpoint responds (will get 401 with bad creds, which is correct)
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8080/api/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"username":"bad","password":"bad"}')
-if [ "$HTTP_CODE" = "401" ]; then
-    echo "    /api/auth/login ........ OK (401 on bad credentials)"
+# ---------------------------------------------------------
+# Step 3: Run the Playwright E2E suite explicitly against the
+#         live Docker stack. The e2e/ module has its own pom.xml;
+#         we invoke it via `-f e2e/pom.xml` so this step is
+#         unambiguous in CI logs.
+#
+#         Playwright Java downloads Chromium automatically on
+#         first use but needs system libraries; we install them
+#         inside the Maven container before running tests. On
+#         Linux hosts we use --network host so the container can
+#         reach the app on localhost:8080; on Docker Desktop
+#         (macOS/Windows) we use host.docker.internal.
+# ---------------------------------------------------------
+echo ""
+echo "[3/3] Running Playwright E2E Suite against live stack..."
+
+# Pick the right network hook for the host OS.
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    E2E_NETWORK_ARGS="--network host"
+    E2E_URL="http://localhost:8080"
 else
-    echo "    /api/auth/login ........ WARN (got $HTTP_CODE)"
+    E2E_NETWORK_ARGS="--add-host=host.docker.internal:host-gateway"
+    E2E_URL="http://host.docker.internal:8080"
 fi
 
-echo "  Smoke tests PASSED"
+docker run --rm \
+    ${E2E_NETWORK_ARGS} \
+    -v "${PROJECT_DIR}:/app" \
+    -v dispatchops-maven-cache:/root/.m2 \
+    -v dispatchops-playwright-cache:/root/.cache/ms-playwright \
+    -w /app \
+    -e E2E_BASE_URL="${E2E_URL}" \
+    -e PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    "${MAVEN_IMAGE}" \
+    bash -c "
+set -e
+echo '  [e2e] installing Chromium runtime dependencies (Ubuntu 24.04 package names)...'
+apt-get update -qq >/dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -qq \
+    libglib2.0-0t64 libnss3 libnspr4 libdbus-1-3 libatk1.0-0t64 libatk-bridge2.0-0t64 \
+    libatspi2.0-0t64 libx11-6 libxcomposite1 libxdamage1 libxext6 libxfixes3 \
+    libxrandr2 libgbm1 libxcb1 libxkbcommon0 libasound2t64 \
+    libcups2t64 libdrm2 libpango-1.0-0 libcairo2 libxi6 libxtst6 \
+    ca-certificates fonts-liberation >/dev/null 2>&1 || true
+# Pre-install Chromium only (Playwright's auto-install tries all browsers
+# including WebKit which is flaky to download on some networks). This call
+# is idempotent — the shared playwright cache volume means the binary is
+# downloaded once per CI machine and reused across runs.
+if [ ! -d /root/.cache/ms-playwright/chromium-* ]; then
+    echo '  [e2e] pre-installing Chromium (first run on this cache volume)...'
+    unset PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD
+    (cd /app/e2e && mvn -B org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+        -Dexec.mainClass=com.microsoft.playwright.CLI \
+        -Dexec.args='install chromium' 2>&1 | tail -15) || true
+    export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+fi
+echo '  [e2e] running mvn test ...'
+cd /app/e2e && mvn test -B
+" 2>&1 | tail -120
 
-# Tear down stack
+E2E_EXIT=${PIPESTATUS[0]}
+
+# Tear down stack (volumes removed — ephemeral)
 docker compose down -v
+
+if [ "$E2E_EXIT" -ne 0 ]; then
+    echo ""
+    echo "E2E tests FAILED (exit code $E2E_EXIT)"
+    exit $E2E_EXIT
+fi
+echo "E2E tests PASSED"
 
 echo ""
 echo "=========================================="

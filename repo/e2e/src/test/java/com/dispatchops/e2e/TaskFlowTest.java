@@ -32,16 +32,18 @@ class TaskFlowTest extends BaseE2ETest {
     @Test
     void createTaskReturns201() {
         loginAsDispatcher();
+        String due = java.time.LocalDateTime.now().plusDays(1).withNano(0).toString();
         APIResponse resp = page.request().post(BASE_URL + "/api/tasks",
-                postOptions("{\"title\":\"Test Task\",\"body\":\"Task body\",\"assigneeId\":3}"));
+                postOptions("{\"title\":\"Test Task\",\"body\":\"Task body\",\"assigneeId\":3,\"dueTime\":\"" + due + "\"}"));
         Assertions.assertEquals(201, resp.status(), "Task creation should return 201");
     }
 
     @Test
     void courierCannotCreateTask() {
         loginAsCourier();
+        String due = java.time.LocalDateTime.now().plusDays(1).withNano(0).toString();
         APIResponse resp = page.request().post(BASE_URL + "/api/tasks",
-                postOptions("{\"title\":\"Test\",\"body\":\"Body\",\"assigneeId\":3}"));
+                postOptions("{\"title\":\"Test\",\"body\":\"Body\",\"assigneeId\":3,\"dueTime\":\"" + due + "\"}"));
         Assertions.assertEquals(403, resp.status(), "Courier must be denied task creation");
     }
 

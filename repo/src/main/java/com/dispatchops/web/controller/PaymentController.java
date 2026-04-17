@@ -194,6 +194,7 @@ public class PaymentController {
         LocalDate toDate = LocalDate.parse(to);
         byte[] csvData = paymentService.generateReconciliationExport(fromDate, toDate);
         return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv"))
                 .header("Content-Disposition", "attachment; filename=\"reconciliation_" + from + "_" + to + ".csv\"")
                 .body(csvData);
     }

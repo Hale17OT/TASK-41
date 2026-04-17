@@ -32,10 +32,37 @@
 
     <build>
         <plugins>
+            <!--
+              exec-maven-plugin is declared (no execution binding) so `mvn
+              org.codehaus.mojo:exec-maven-plugin:3.5.0:java` can be invoked
+              separately to pre-install only Chromium before the test phase.
+              Binding it to a phase is unsafe because Playwright's CLI calls
+              System.exit, which terminates the Maven JVM before surefire runs.
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.3.1</version>
+                <configuration>
+                    <!--
+                      Keep a single JVM fork for the whole suite so Playwright's
+                      browser download cache in /root/.cache/ms-playwright is
+                      built once and reused across test classes. The
+                      PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS env var
+                      bypasses a flaky deps self-check that sometimes
+                      misreports existing system libraries as missing.
+                    -->
+                    <reuseForks>true</reuseForks>
+                    <forkCount>1</forkCount>
+                    <environmentVariables>
+                        <PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS>1</PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS>
+                    </environmentVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>

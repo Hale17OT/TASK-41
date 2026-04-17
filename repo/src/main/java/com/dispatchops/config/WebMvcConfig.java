@@ -49,6 +49,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+        // Keep the default byte[] and string converters so endpoints that
+        // return raw binary (e.g. reconciliation CSV) work correctly.
+        converters.add(new org.springframework.http.converter.ByteArrayHttpMessageConverter());
+        converters.add(new org.springframework.http.converter.StringHttpMessageConverter(java.nio.charset.StandardCharsets.UTF_8));
+
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());

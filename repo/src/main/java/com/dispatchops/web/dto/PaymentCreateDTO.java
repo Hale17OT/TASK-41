@@ -1,11 +1,15 @@
 package com.dispatchops.web.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
+// Tolerate extra fields that the UI may send (e.g. optional "notes") instead
+// of failing the whole request with a 500 UnrecognizedPropertyException.
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PaymentCreateDTO {
 
     @NotBlank

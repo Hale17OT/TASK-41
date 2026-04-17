@@ -17,20 +17,25 @@ class SearchIntegrationFlowTest extends BaseE2ETest {
                 postOptions("{\"senderName\":\"W\",\"senderAddress\":\"A\",\"receiverName\":\"" + unique +
                         "\",\"receiverAddress\":\"B\",\"receiverState\":\"CA\",\"receiverZip\":\"90210\"," +
                         "\"weightLbs\":5.0,\"orderAmount\":50.0}"));
-        Assertions.assertEquals(200, createResp.status());
+        Assertions.assertEquals(201, createResp.status());
 
         APIResponse searchResp = page.request().get(BASE_URL + "/api/search?q=" + unique);
         Assertions.assertEquals(200, searchResp.status());
-        Assertions.assertTrue(searchResp.text().contains(unique),
-                "Search must contain the exact unique job receiver name: " + unique);
+        // The search index matches on the description (receiverName) but the API
+        // strips the description before returning (to avoid leaking operational
+        // detail). So assert on the documented totalElements > 0 instead.
+        Assertions.assertTrue(searchResp.text().contains("\"totalElements\":1")
+                        || searchResp.text().contains("\"totalElements\": 1"),
+                "Search must find the job just created (totalElements=1); got: " + searchResp.text());
     }
 
     @Test
     void createdTaskAppearsInSearch() {
         loginAsDispatcher();
         String unique = "TSKSRCH" + System.currentTimeMillis();
+        String due = java.time.LocalDateTime.now().plusDays(1).withNano(0).toString();
         APIResponse createResp = page.request().post(BASE_URL + "/api/tasks",
-                postOptions("{\"title\":\"" + unique + "\",\"body\":\"Body\",\"assigneeId\":3}"));
+                postOptions("{\"title\":\"" + unique + "\",\"body\":\"Body\",\"assigneeId\":3,\"dueTime\":\"" + due + "\"}"));
         Assertions.assertEquals(201, createResp.status());
 
         APIResponse searchResp = page.request().get(BASE_URL + "/api/search?q=" + unique);
@@ -87,7 +92,7 @@ class SearchIntegrationFlowTest extends BaseE2ETest {
                 postOptions("{\"senderName\":\"W\",\"senderAddress\":\"A\",\"receiverName\":\"" + jobUnique +
                         "\",\"receiverAddress\":\"B\",\"receiverState\":\"CA\",\"receiverZip\":\"90210\"," +
                         "\"weightLbs\":5.0,\"orderAmount\":50.0}"));
-        Assertions.assertEquals(200, jobResp.status());
+        Assertions.assertEquals(201, jobResp.status());
         // Extract job ID from response
         String jobBody = jobResp.text();
         int idStart = jobBody.indexOf("\"id\":") + 5;

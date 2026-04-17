@@ -111,6 +111,18 @@ public class UserController {
 
         log.info("Changing password for user with id: {}", id);
         userService.changePassword(id, newPassword);
+
+        // Self-service change: the in-session User object still carries the
+        // pre-change must_change_password=true flag, which would make the
+        // auth interceptor reject every subsequent request until re-login.
+        // Refresh the session copy so the user can keep using this session.
+        if (session != null) {
+            User currentUser = (User) session.getAttribute("currentUser");
+            if (currentUser != null && currentUser.getId() != null && currentUser.getId().equals(id)) {
+                currentUser.setMustChangePassword(false);
+                session.setAttribute("currentUser", currentUser);
+            }
+        }
         return ResponseEntity.ok(ApiResult.success());
     }
 
